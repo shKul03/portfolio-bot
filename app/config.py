@@ -22,5 +22,18 @@ class Settings(BaseSettings):
     def allowed_origins_list(self) -> list[str]:
         return [origin.strip() for origin in self.ALLOWED_ORIGINS.split(",") if origin.strip()]
 
+    @property
+    def asyncpg_url(self) -> str:
+        """Convert Neon postgres:// URL to asyncpg-compatible format."""
+        url = self.DATABASE_URL
+        url = url.replace("postgresql://", "").replace("postgres://", "")
+        url = url.split("?")[0]
+        return f"postgresql://{url}"
+
+    @property
+    def asyncpg_ssl(self) -> bool:
+        """Return True if the DATABASE_URL contains sslmode=require."""
+        return "sslmode=require" in self.DATABASE_URL
+
 
 settings = Settings()

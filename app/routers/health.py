@@ -58,3 +58,18 @@ async def health():
         embedder=embedder_ok,
         llm=llm_ok,
     )
+
+
+@router.get("/ping")
+async def ping():
+    db_ok = False
+    try:
+        pool = await get_pool()
+        if pool is not None:
+            async with pool.acquire() as conn:
+                await conn.fetchval("SELECT 1")
+            db_ok = True
+            logger.debug("ping ok")
+    except Exception:
+        pass
+    return {"pong": True, "db": db_ok}

@@ -191,3 +191,36 @@ Response:
 curl -X POST https://your-app.railway.app/ingest/knowledge \
   -H "X-API-Key: your-ingest-api-key"
 ```
+
+---
+
+## Keeping Neon warm
+
+Neon's free tier suspends compute after 5 minutes of inactivity. To prevent
+cold starts during active use, set up a cron job to ping the bot every 4 minutes.
+
+**Option A — cron-job.org (free, recommended)**
+1. Go to cron-job.org and create a free account
+2. Create a new cron job:
+   - URL: `https://your-railway-url.up.railway.app/ping`
+   - Schedule: every 4 minutes
+   - Method: GET
+3. Enable the job — that's it
+
+**Option B — GitHub Actions (free)**
+
+Create `.github/workflows/keepalive.yml`:
+
+```yaml
+name: Keep Neon warm
+on:
+  schedule:
+    - cron: '*/4 * * * *'
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - run: curl -f ${{ secrets.BOT_URL }}/ping
+```
+
+Add `BOT_URL` as a GitHub Actions secret with your Railway URL.
