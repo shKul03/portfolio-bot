@@ -4,41 +4,44 @@ from app.config import settings
 
 logger = logging.getLogger(__name__)
 
+GROQ_EMBED_URL = "https://api.groq.com/openai/v1/embeddings"
+EMBED_MODEL = "nomic-embed-text-v1_5"
 EMBEDDING_DIM = 768
 
 
-async def embed_text(text: str) -> list[float]:
-    url = f"{settings.OLLAMA_BASE_URL}/api/embeddings"
-    payload = {"model": settings.EMBEDDING_MODEL, "prompt": text}
-
-    try:
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            response = await client.post(url, json=payload)
-            response.raise_for_status()
-            data = response.json()
-            embedding = data.get("embedding")
-            if not embedding or len(embedding) != EMBEDDING_DIM:
-                raise ValueError(
-                    f"Unexpected embedding dimension: got {len(embedding) if embedding else 0}, "
-                    f"expected {EMBEDDING_DIM}"
-                )
-            return embedding
-    except Exception as e:
-        logger.error(f"Embedding failed for text snippet '{text[:60]}...': {e}")
-        raise
+async def embed(text: str) -> list[float]:
+    """Embed text using Groq nomic-embed-text-v1_5 (768 dimensions)."""
+    async with httpx.AsyncClient() as client:
+        response = await client.post(
+            GROQ_EMBED_URL,
+            headers={
+                "Authorization": f"Bearer {settings.GROQ_API_KEY}",
+                "Content-Type": "application/json",
+            },
+            json={
+                "model": EMBED_MODEL,
+                "input": text.replace("\n", " "),
+            },
+            timeout=30.0,
+        )
+        response.raise_for_status()
+        return response.json()["data"][0]["embedding"]
 
 
 async def embed_batch(texts: list[str]) -> list[list[float]]:
-    results = []
-    for text in texts:
-        embedding = await embed_text(text)
-        results.append(embedding)
-    return results
-
-
-async def check_embedder_health() -> bool:
-    try:
-        await embed_text("health check")
-        return True
-    except Exception:
-        return False
+    """Embed a batch of texts in a single API call."""
+    async with httpx.AsyncClient() as client:
+        response = await client.post(
+            GROQ_EMBED_URL,
+            headers={
+                "Authorization": f"Bearer {settings.GROQ_API_KEY}",
+                "Content-Type": "application/json",
+            },
+            json={
+                "model": EMBED_MODEL,
+                "input": [t.replace("\n", " ") for t in texts],
+            },
+            timeout=30.0,
+        )
+        response.raise_for_status()
+        return [item["embedding"] for item in response.json()["data"]]

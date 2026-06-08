@@ -1,7 +1,7 @@
 import logging
 import json
 from pathlib import Path
-from app.services.embedder import embed_text
+from app.services.embedder import embed
 from app.database import get_pool
 from app.config import settings
 
@@ -96,7 +96,7 @@ async def ingest_file(file_path: str | Path) -> int:
                 continue
             doc_id = f"{filename}::chunk_{i}"
             try:
-                embedding = await embed_text(chunk)
+                embedding = await embed(chunk)
                 metadata = {"source": "knowledge_file", "filename": filename, "chunk_index": i}
                 await _upsert_chunk(conn, doc_id, chunk, embedding, metadata, label=filename)
                 count += 1
@@ -124,7 +124,7 @@ async def ingest_chunks_with_label(
                 continue
             doc_id = f"{base_id}::chunk_{i}"
             try:
-                embedding = await embed_text(chunk)
+                embedding = await embed(chunk)
                 metadata = {"source": "web_crawl", "label": label, "chunk_index": i}
                 await _upsert_chunk(conn, doc_id, chunk, embedding, metadata, label=label)
                 count += 1

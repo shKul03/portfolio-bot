@@ -83,7 +83,7 @@ async def test_stable_ids_no_duplicates():
 
     try:
         with patch("app.services.ingestor.get_pool", return_value=AsyncMock(return_value=mock_pool)), \
-             patch("app.services.ingestor.embed_text", return_value=[0.1] * 768), \
+             patch("app.services.ingestor.embed", return_value=[0.1] * 768), \
              patch("app.services.ingestor._upsert_chunk", new=mock_upsert):
 
             from app.services.ingestor import get_pool as _gp

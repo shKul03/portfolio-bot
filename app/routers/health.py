@@ -21,8 +21,9 @@ async def _check_db() -> bool:
 
 async def _check_embedder() -> bool:
     try:
-        from app.services.embedder import check_embedder_health
-        return await check_embedder_health()
+        from app.services.embedder import embed
+        result = await embed("health check")
+        return len(result) == 768
     except Exception:
         return False
 
@@ -30,18 +31,12 @@ async def _check_embedder() -> bool:
 async def _check_llm() -> bool:
     from app.config import settings
     try:
-        if settings.LLM_PROVIDER == "groq":
-            if not settings.GROQ_API_KEY:
-                return False
-            from groq import AsyncGroq
-            client = AsyncGroq(api_key=settings.GROQ_API_KEY)
-            await client.models.list()
-            return True
-        else:
-            import httpx
-            async with httpx.AsyncClient(timeout=5.0) as client:
-                r = await client.get(f"{settings.OLLAMA_BASE_URL}/api/tags")
-                return r.status_code == 200
+        if not settings.GROQ_API_KEY:
+            return False
+        from groq import AsyncGroq
+        client = AsyncGroq(api_key=settings.GROQ_API_KEY)
+        await client.models.list()
+        return True
     except Exception:
         return False
 

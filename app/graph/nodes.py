@@ -1,50 +1,28 @@
 import logging
 import json
+from groq import AsyncGroq
 from langchain_core.messages import HumanMessage, AIMessage
 from app.graph.state import BotState
 from app.personality.prompts import PERSONALITY_PROMPTS
 from app.config import settings
-from app.services.embedder import embed_text
+from app.services.embedder import embed
 from app.services.retriever import similarity_search
 
 logger = logging.getLogger(__name__)
 
 INTENT_LABELS = ["greeting", "experience", "projects", "skills", "contact", "availability", "education", "general"]
-
-
-def _get_llm_client():
-    if settings.LLM_PROVIDER == "groq":
-        from groq import AsyncGroq
-        return AsyncGroq(api_key=settings.GROQ_API_KEY)
-    else:
-        from ollama import AsyncClient
-        return AsyncClient(host=settings.OLLAMA_BASE_URL)
-
-
-def _get_model_name() -> str:
-    if settings.LLM_PROVIDER == "groq":
-        return "llama-3.3-70b-versatile"
-    return settings.OLLAMA_MODEL
+GROQ_MODEL = "llama-3.3-70b-versatile"
 
 
 async def _chat_completion(system: str, user: str) -> str:
-    client = _get_llm_client()
-    model = _get_model_name()
-    if settings.LLM_PROVIDER == "groq":
-        response = await client.chat.completions.create(
-            model=model,
-            messages=[{"role": "system", "content": system}, {"role": "user", "content": user}],
-            temperature=0.7,
-            max_tokens=1024,
-        )
-        return response.choices[0].message.content.strip()
-    else:
-        import ollama
-        response = await client.chat(
-            model=model,
-            messages=[{"role": "system", "content": system}, {"role": "user", "content": user}],
-        )
-        return response["message"]["content"].strip()
+    client = AsyncGroq(api_key=settings.GROQ_API_KEY)
+    response = await client.chat.completions.create(
+        model=GROQ_MODEL,
+        messages=[{"role": "system", "content": system}, {"role": "user", "content": user}],
+        temperature=0.7,
+        max_tokens=1024,
+    )
+    return response.choices[0].message.content.strip()
 
 
 async def intent_classifier(state: BotState) -> BotState:
@@ -105,7 +83,7 @@ async def retriever_node(state: BotState) -> BotState:
         return {**state, "retrieved_chunks": []}
 
     try:
-        embedding = await embed_text(query)
+        embedding = await embed(query)
         results = await similarity_search(
             embedding=embedding,
             top_k=settings.TOP_K,

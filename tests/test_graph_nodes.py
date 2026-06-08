@@ -84,7 +84,7 @@ async def test_retriever_uses_rewritten_query_if_available():
         return [0.0] * 768
 
     state = _make_state(rewritten_query="Rewritten version of the question")
-    with patch("app.graph.nodes.embed_text", new=mock_embed), \
+    with patch("app.graph.nodes.embed", new=mock_embed), \
          patch("app.graph.nodes.similarity_search", new=AsyncMock(return_value=[])):
         await graph_nodes.retriever_node(state)
     assert captured["query"] == "Rewritten version of the question"
@@ -99,7 +99,7 @@ async def test_retriever_falls_back_to_original_message():
         return [0.0] * 768
 
     state = _make_state(rewritten_query=None)
-    with patch("app.graph.nodes.embed_text", new=mock_embed), \
+    with patch("app.graph.nodes.embed", new=mock_embed), \
          patch("app.graph.nodes.similarity_search", new=AsyncMock(return_value=[])):
         await graph_nodes.retriever_node(state)
     assert captured["query"] == "What has she built?"
@@ -108,7 +108,7 @@ async def test_retriever_falls_back_to_original_message():
 @pytest.mark.asyncio
 async def test_retriever_returns_empty_list_on_failure():
     state = _make_state()
-    with patch("app.graph.nodes.embed_text", new=AsyncMock(side_effect=Exception("Ollama down"))):
+    with patch("app.graph.nodes.embed", new=AsyncMock(side_effect=Exception("embed API down"))):
         result = await graph_nodes.retriever_node(state)
     assert result["retrieved_chunks"] == []
 

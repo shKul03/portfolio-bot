@@ -4,11 +4,9 @@ from typing import Optional
 
 class Settings(BaseSettings):
     DATABASE_URL: str
+    # Groq API key — used for both LLM generation (llama3)
+    # and embeddings (nomic-embed-text-v1_5). Get yours free at console.groq.com
     GROQ_API_KEY: Optional[str] = None
-    OLLAMA_BASE_URL: str = "http://localhost:11434"
-    OLLAMA_MODEL: str = "llama3"
-    EMBEDDING_MODEL: str = "nomic-embed-text"
-    LLM_PROVIDER: str = "groq"
     INGEST_API_KEY: str
     ALLOWED_ORIGINS: str = "http://localhost:3000"
     TOP_K: int = 5
