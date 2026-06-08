@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import asyncpg
+from pgvector.asyncpg import register_vector
 from app.config import settings
 
 logger = logging.getLogger(__name__)
@@ -26,25 +27,32 @@ async def execute_with_retry(pool: asyncpg.Pool, query: str, *args):
 
 async def init_db() -> None:
     global _pool
-    try:
-        pool_kwargs = dict(
-            dsn=settings.asyncpg_url,
-            min_size=1,
-            max_size=5,
-            max_inactive_connection_lifetime=270,
-            max_cached_statement_lifetime=0,
-            command_timeout=30,
-            server_settings={"application_name": "portfolio-bot"},
-        )
-        if settings.asyncpg_ssl:
-            pool_kwargs["ssl"] = "require"
+    pool_kwargs = dict(
+        dsn=settings.asyncpg_url,
+        min_size=1,
+        max_size=5,
+        max_inactive_connection_lifetime=270,
+        max_cached_statement_lifetime=0,
+        command_timeout=30,
+        server_settings={"application_name": "portfolio-bot"},
+        init=register_vector,
+    )
+    if settings.asyncpg_ssl:
+        pool_kwargs["ssl"] = "require"
 
+    try:
         _pool = await asyncpg.create_pool(**pool_kwargs)
-        await _setup_schema()
         logger.info("Database connection pool established.")
     except Exception as e:
         logger.warning(f"Database unavailable on startup — continuing without DB: {e}")
         _pool = None
+        return
+
+    # Schema setup is best-effort: a failure here must not destroy the pool.
+    try:
+        await _setup_schema()
+    except Exception as e:
+        logger.warning(f"Schema setup failed (pool still available): {e}")
 
 
 async def close_db() -> None:

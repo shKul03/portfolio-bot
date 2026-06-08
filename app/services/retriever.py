@@ -15,22 +15,21 @@ async def similarity_search(
         logger.warning("Database pool not available — returning empty results.")
         return []
 
-    embedding_str = "[" + ",".join(str(v) for v in embedding) + "]"
-
+    # Pass embedding as a Python list — pgvector asyncpg codec handles encoding.
     query = """
         SELECT
             content,
-            1 - (embedding <=> $1::vector) AS score,
+            1 - (embedding <=> $1) AS score,
             metadata
         FROM documents
-        WHERE 1 - (embedding <=> $1::vector) >= $2
+        WHERE 1 - (embedding <=> $1) >= $2
         ORDER BY score DESC
         LIMIT $3;
     """
 
     try:
         async with pool.acquire() as conn:
-            rows = await conn.fetch(query, embedding_str, min_score, top_k)
+            rows = await conn.fetch(query, embedding, min_score, top_k)
             results = []
             for row in rows:
                 metadata = row["metadata"]

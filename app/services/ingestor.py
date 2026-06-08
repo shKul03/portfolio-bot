@@ -50,11 +50,12 @@ async def _upsert_chunk(
     metadata: dict,
     label: str,
 ) -> None:
-    embedding_str = "[" + ",".join(str(v) for v in embedding) + "]"
+    # Pass embedding as a Python list — pgvector asyncpg codec encodes it correctly.
+    # Pass metadata as a JSON string with explicit ::jsonb cast.
     await conn.execute(
         """
         INSERT INTO documents (id, content, embedding, metadata, label)
-        VALUES ($1, $2, $3::vector, $4::jsonb, $5)
+        VALUES ($1, $2, $3, $4::jsonb, $5)
         ON CONFLICT (id) DO UPDATE
             SET content = EXCLUDED.content,
                 embedding = EXCLUDED.embedding,
@@ -63,7 +64,7 @@ async def _upsert_chunk(
         """,
         doc_id,
         content,
-        embedding_str,
+        embedding,
         json.dumps(metadata),
         label,
     )
@@ -97,7 +98,7 @@ async def ingest_file(file_path: str | Path) -> int:
             doc_id = f"{filename}::chunk_{i}"
             try:
                 embedding = await embed(chunk)
-                metadata = {"source": "knowledge_file", "filename": filename, "chunk_index": i}
+                metadata = {"source": "knowledge_file", "label": filename, "chunk_index": i}
                 await _upsert_chunk(conn, doc_id, chunk, embedding, metadata, label=filename)
                 count += 1
             except Exception as e:
