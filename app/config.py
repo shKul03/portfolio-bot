@@ -10,8 +10,8 @@ class Settings(BaseSettings):
     ALLOWED_ORIGINS: str = "http://localhost:3000"
     TOP_K: int = 5
     MIN_SCORE: float = 0.42
-    CHUNK_SIZE: int = 700
-    CHUNK_OVERLAP: int = 100
+    CHUNK_SIZE: int = 200
+    CHUNK_OVERLAP: int = 20
 
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8", "extra": "ignore"}
 

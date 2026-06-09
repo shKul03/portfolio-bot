@@ -8,6 +8,7 @@ from app.config import settings
 logger = logging.getLogger(__name__)
 
 PLACEHOLDER = "(To be filled in)"
+SKIP_DIRECTIVE = "<!-- skip -->"
 
 
 def chunk_text(text: str, chunk_size: int = None, overlap: int = None) -> list[str]:
@@ -34,6 +35,8 @@ def chunk_text(text: str, chunk_size: int = None, overlap: int = None) -> list[s
 def _is_skippable(content: str) -> bool:
     stripped = content.strip()
     if not stripped:
+        return True
+    if stripped.startswith(SKIP_DIRECTIVE):
         return True
     if stripped == PLACEHOLDER:
         return True
