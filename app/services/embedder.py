@@ -4,44 +4,51 @@ from app.config import settings
 
 logger = logging.getLogger(__name__)
 
-GROQ_EMBED_URL = "https://api.groq.com/openai/v1/embeddings"
-EMBED_MODEL = "nomic-embed-text-v1_5"
+NOMIC_EMBED_URL = "https://api-atlas.nomic.ai/v1/embedding/text"
+EMBED_MODEL = "nomic-embed-text-v1.5"
 EMBEDDING_DIM = 768
 
 
-async def embed(text: str) -> list[float]:
-    """Embed text using Groq nomic-embed-text-v1_5 (768 dimensions)."""
+async def embed(text: str, task_type: str = "search_document") -> list[float]:
+    """Embed text using Nomic AI nomic-embed-text-v1.5 (768 dimensions).
+
+    task_type: "search_document" for indexed content, "search_query" for queries.
+    """
     async with httpx.AsyncClient() as client:
         response = await client.post(
-            GROQ_EMBED_URL,
+            NOMIC_EMBED_URL,
             headers={
-                "Authorization": f"Bearer {settings.GROQ_API_KEY}",
+                "Authorization": f"Bearer {settings.NOMIC_API_KEY}",
                 "Content-Type": "application/json",
             },
             json={
                 "model": EMBED_MODEL,
-                "input": text.replace("\n", " "),
+                "texts": [text.replace("\n", " ")],
+                "task_type": task_type,
             },
             timeout=30.0,
         )
         response.raise_for_status()
-        return response.json()["data"][0]["embedding"]
+        return response.json()["embeddings"][0]
 
 
-async def embed_batch(texts: list[str]) -> list[list[float]]:
+async def embed_batch(
+    texts: list[str], task_type: str = "search_document"
+) -> list[list[float]]:
     """Embed a batch of texts in a single API call."""
     async with httpx.AsyncClient() as client:
         response = await client.post(
-            GROQ_EMBED_URL,
+            NOMIC_EMBED_URL,
             headers={
-                "Authorization": f"Bearer {settings.GROQ_API_KEY}",
+                "Authorization": f"Bearer {settings.NOMIC_API_KEY}",
                 "Content-Type": "application/json",
             },
             json={
                 "model": EMBED_MODEL,
-                "input": [t.replace("\n", " ") for t in texts],
+                "texts": [t.replace("\n", " ") for t in texts],
+                "task_type": task_type,
             },
             timeout=30.0,
         )
         response.raise_for_status()
-        return [item["embedding"] for item in response.json()["data"]]
+        return response.json()["embeddings"]

@@ -4,9 +4,8 @@ from typing import Optional
 
 class Settings(BaseSettings):
     DATABASE_URL: str
-    # Groq API key — used for both LLM generation (llama3)
-    # and embeddings (nomic-embed-text-v1_5). Get yours free at console.groq.com
     GROQ_API_KEY: Optional[str] = None
+    NOMIC_API_KEY: Optional[str] = None
     INGEST_API_KEY: str
     ALLOWED_ORIGINS: str = "http://localhost:3000"
     TOP_K: int = 5
@@ -14,7 +13,7 @@ class Settings(BaseSettings):
     CHUNK_SIZE: int = 700
     CHUNK_OVERLAP: int = 100
 
-    model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
+    model_config = {"env_file": ".env", "env_file_encoding": "utf-8", "extra": "ignore"}
 
     @property
     def allowed_origins_list(self) -> list[str]:

@@ -83,7 +83,7 @@ async def retriever_node(state: BotState) -> BotState:
         return {**state, "retrieved_chunks": []}
 
     try:
-        embedding = await embed(query)
+        embedding = await embed(query, task_type="search_query")
         results = await similarity_search(
             embedding=embedding,
             top_k=settings.TOP_K,

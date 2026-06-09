@@ -12,3 +12,4 @@ build/
 uploads/
 .DS_Store
 *.log
+portfolio-bot.env

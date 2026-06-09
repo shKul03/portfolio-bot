@@ -20,6 +20,9 @@ async def _check_db() -> bool:
 
 
 async def _check_embedder() -> bool:
+    from app.config import settings
+    if not settings.NOMIC_API_KEY:
+        return False
     try:
         from app.services.embedder import embed
         result = await embed("health check")
