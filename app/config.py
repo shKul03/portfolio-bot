@@ -8,10 +8,10 @@ class Settings(BaseSettings):
     NOMIC_API_KEY: Optional[str] = None
     INGEST_API_KEY: str
     ALLOWED_ORIGINS: str = "http://localhost:3000"
-    TOP_K: int = 5
+    TOP_K: int = 10
     MIN_SCORE: float = 0.42
-    CHUNK_SIZE: int = 200
-    CHUNK_OVERLAP: int = 20
+    CHUNK_SIZE: int = 400
+    CHUNK_OVERLAP: int = 50
 
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8", "extra": "ignore"}
 

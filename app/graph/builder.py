@@ -15,22 +15,33 @@ logger = logging.getLogger(__name__)
 
 _graph = None
 _checkpointer = None
-_checkpointer_cm = None
+_pool = None
 
 
 async def build_graph():
-    global _graph, _checkpointer, _checkpointer_cm
+    global _graph, _checkpointer, _pool
 
     try:
+        from psycopg_pool import AsyncConnectionPool
         from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
-        _checkpointer_cm = AsyncPostgresSaver.from_conn_string(settings.DATABASE_URL)
-        _checkpointer = await _checkpointer_cm.__aenter__()
+
+        # psycopg accepts standard postgresql:// URLs; strip channel_binding which Neon adds
+        # but psycopg handles as a no-op and can cause parse issues on some drivers
+        url = settings.DATABASE_URL.replace("postgres://", "postgresql://")
+
+        _pool = AsyncConnectionPool(
+            conninfo=url,
+            max_size=5,
+            kwargs={"autocommit": True},
+        )
+        await _pool.open()
+        _checkpointer = AsyncPostgresSaver(_pool)
         await _checkpointer.setup()
-        logger.info("LangGraph AsyncPostgresSaver initialised.")
+        logger.info("LangGraph AsyncPostgresSaver initialised with connection pool.")
     except Exception as e:
         logger.warning(f"Could not initialise AsyncPostgresSaver — session memory disabled: {e}")
         _checkpointer = None
-        _checkpointer_cm = None
+        _pool = None
 
     builder = StateGraph(BotState)
 
@@ -61,13 +72,13 @@ async def build_graph():
 
 
 async def teardown_graph():
-    global _checkpointer_cm
-    if _checkpointer_cm is not None:
+    global _pool
+    if _pool is not None:
         try:
-            await _checkpointer_cm.__aexit__(None, None, None)
+            await _pool.close()
         except Exception as e:
-            logger.warning(f"Error tearing down checkpointer: {e}")
-        _checkpointer_cm = None
+            logger.warning(f"Error closing checkpointer pool: {e}")
+        _pool = None
 
 
 def get_graph():

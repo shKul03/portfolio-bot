@@ -61,7 +61,9 @@ async def query_rewriter(state: BotState) -> BotState:
     query = last_human.content
     system = (
         "You are a query rewriting assistant. Rewrite the user's question to be more specific "
-        "and retrieval-friendly for a vector database about Shloka Kulkarni's professional profile. "
+        "and retrieval-friendly for a vector database about Shloka Kulkarni — including her "
+        "professional background, projects, skills, AND personal interests, hobbies, books, "
+        "movies, music, and personality. "
         "Return ONLY the rewritten query, nothing else."
     )
     try:

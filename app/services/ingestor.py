@@ -12,24 +12,57 @@ SKIP_DIRECTIVE = "<!-- skip -->"
 
 
 def chunk_text(text: str, chunk_size: int = None, overlap: int = None) -> list[str]:
+    """
+    Split text into chunks respecting markdown boundaries.
+    Priority: split on ## headings, then # headings, then double
+    newlines, then single newlines, then sentences, then words.
+    chunk_size is in CHARACTERS not words.
+    """
     chunk_size = chunk_size or settings.CHUNK_SIZE
     overlap = overlap or settings.CHUNK_OVERLAP
 
-    words = text.split()
-    if not words:
-        return []
+    separators = ["\n## ", "\n# ", "\n\n", "\n", ". ", " "]
 
-    chunks = []
-    start = 0
-    while start < len(words):
-        end = start + chunk_size
-        chunk = " ".join(words[start:end])
-        chunks.append(chunk)
-        if end >= len(words):
-            break
-        start = end - overlap
+    def split_recursive(text: str, separators: list[str]) -> list[str]:
+        if not separators:
+            return [text]
 
-    return chunks
+        sep = separators[0]
+        splits = text.split(sep)
+
+        chunks = []
+        current = ""
+
+        for split in splits:
+            candidate = (current + sep + split).strip() if current else split.strip()
+            if len(candidate) <= chunk_size:
+                current = candidate
+            else:
+                if current:
+                    chunks.append(current.strip())
+                if len(split.strip()) > chunk_size:
+                    sub_chunks = split_recursive(split.strip(), separators[1:])
+                    chunks.extend(sub_chunks)
+                    current = ""
+                else:
+                    current = split.strip()
+
+        if current.strip():
+            chunks.append(current.strip())
+
+        return [c for c in chunks if len(c.strip()) > 80]
+
+    raw_chunks = split_recursive(text, separators)
+
+    if overlap <= 0 or len(raw_chunks) <= 1:
+        return raw_chunks
+
+    overlapped = [raw_chunks[0]]
+    for i in range(1, len(raw_chunks)):
+        prev_tail = raw_chunks[i-1][-overlap:] if len(raw_chunks[i-1]) > overlap else raw_chunks[i-1]
+        overlapped.append(prev_tail + " " + raw_chunks[i])
+
+    return overlapped
 
 
 def _is_skippable(content: str) -> bool:
