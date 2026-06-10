@@ -36,6 +36,19 @@ async def similarity_search(
                 if isinstance(metadata, str):
                     metadata = json.loads(metadata)
                 results.append((row["content"], float(row["score"]), metadata))
+            logger.info(
+                "Retrieved %s chunks",
+                len(results)
+            )
+
+            for i, (content, score, metadata) in enumerate(results):
+                logger.info(
+                    "[%s] score=%.4f label=%s preview=%s",
+                    i,
+                    score,
+                    metadata.get("label"),
+                    content[:200].replace("\n", " ")
+                )
             return results
     except Exception as e:
         logger.error(f"Similarity search failed: {e}")
