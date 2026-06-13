@@ -79,7 +79,7 @@ async def test_query_rewriter_falls_back_to_original_on_error():
 async def test_retriever_uses_rewritten_query_if_available():
     captured = {}
 
-    async def mock_embed(text):
+    async def mock_embed(text, **kwargs):
         captured["query"] = text
         return [0.0] * 768
 
@@ -94,7 +94,7 @@ async def test_retriever_uses_rewritten_query_if_available():
 async def test_retriever_falls_back_to_original_message():
     captured = {}
 
-    async def mock_embed(text):
+    async def mock_embed(text, **kwargs):
         captured["query"] = text
         return [0.0] * 768
 

@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from fastapi import APIRouter, Depends, HTTPException
 from langchain_core.messages import HumanMessage
@@ -7,6 +8,19 @@ from app.graph.builder import get_checkpointer
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/chat", tags=["chat"])
+
+
+async def invoke_graph_with_retry(graph, input_data: dict, config: dict, max_retries: int = 1):
+    for attempt in range(max_retries + 1):
+        try:
+            return await graph.ainvoke(input_data, config)
+        except Exception as e:
+            error_str = str(e).lower()
+            if attempt < max_retries and any(kw in error_str for kw in ("ssl", "connection", "closed")):
+                logger.warning(f"Graph invocation failed (attempt {attempt + 1}), retrying: {e}")
+                await asyncio.sleep(0.5)
+                continue
+            raise
 
 
 @router.post("", response_model=ChatResponse)
@@ -24,7 +38,7 @@ async def chat(request: ChatRequest, graph=Depends(get_bot_graph)):
     }
 
     try:
-        result = await graph.ainvoke(initial_state, config=config)
+        result = await invoke_graph_with_retry(graph, initial_state, config=config)
     except Exception as e:
         logger.error(f"Graph invocation failed: {e}")
         raise HTTPException(status_code=500, detail="Failed to process your message.")

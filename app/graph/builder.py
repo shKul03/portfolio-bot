@@ -31,8 +31,15 @@ async def build_graph():
 
         _pool = AsyncConnectionPool(
             conninfo=url,
+            min_size=1,
             max_size=5,
+            max_lifetime=300,
+            max_idle=240,
+            reconnect_timeout=10,
+            num_workers=2,
+            check=AsyncConnectionPool.check_connection,
             kwargs={"autocommit": True},
+            open=False,
         )
         await _pool.open()
         _checkpointer = AsyncPostgresSaver(_pool)
