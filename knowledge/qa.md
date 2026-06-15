@@ -40,6 +40,14 @@ Q: Can you work with OpenAI / GPT models?
 A: Yes — experience with both OpenAI APIs and local models via Ollama.
 Stack-agnostic on the LLM layer.
 
+Q: What projects has Shloka built? What are her portfolio projects?
+A: Shloka has built 8 projects: LiveMind (RAG chatbot deployable on any website
+in under a day), KnowledgeEngine (enterprise RAG pipeline with re-ranking),
+OnBoardIQ (AI background-verification document pipeline), SentiCore (WhatsApp AI
+appointment system for hospitals), Smart Revenue Collector (AI debt-collection
+automation), VoiceBot PoC (STT/TTS microservice), BillSage AI (async OCR bill
+classifier), and Technossus Design System (Figma-to-code component library).
+
 Q: What is LiveMind?
 A: LiveMind is a RAG chatbot that can be deployed on any website in under
 a day. It scrapes the site live, embeds the content, and answers user

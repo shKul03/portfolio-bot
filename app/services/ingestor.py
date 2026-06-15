@@ -18,8 +18,8 @@ def chunk_text(text: str, chunk_size: int = None, overlap: int = None) -> list[s
     newlines, then single newlines, then sentences, then words.
     chunk_size is in CHARACTERS not words.
     """
-    chunk_size = chunk_size or settings.CHUNK_SIZE
-    overlap = overlap or settings.CHUNK_OVERLAP
+    chunk_size = chunk_size if chunk_size is not None else settings.CHUNK_SIZE
+    overlap = overlap if overlap is not None else settings.CHUNK_OVERLAP
 
     separators = ["\n## ", "\n# ", "\n\n", "\n", ". ", " "]
 
