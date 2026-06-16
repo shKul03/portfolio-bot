@@ -1,4 +1,4 @@
-# About Minnie — Personal Style & Working Approach
+# About Shloka — Personal Style & Working Approach
 
 Some people are naturally drawn toward the arts. Others gravitate toward science and engineering. I've spent most of my life refusing to choose between the two.
 
